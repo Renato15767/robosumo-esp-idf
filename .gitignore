@@ -1,0 +1,7 @@
+/.pio/
+/build/
+/.venv/
+/sdkconfig
+/sdkconfig.old
+/sdkconfig.autonomo
+/sdkconfig.diagnostico

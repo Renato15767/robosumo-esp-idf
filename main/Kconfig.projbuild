@@ -1,0 +1,9 @@
+menu "RoboSumo"
+
+config ROBOSUMO_DIAGNOSTICO
+    bool "Diagnostico com motores bloqueados"
+    default n
+    help
+        Imprime as leituras dos sensores pela serial mantendo STBY desligado.
+
+endmenu
