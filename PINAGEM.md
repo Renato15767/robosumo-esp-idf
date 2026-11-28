@@ -11,8 +11,8 @@ flowchart LR
     ESP -->|"GPIO 18, 19, 25, 21, 22, 26, 23"| H
     H -->|"AO1 / AO2"| ME["Motor esquerdo"]
     H -->|"BO1 / BO2"| MD["Motor direito"]
-    ESP -->|"GPIO16 e GPIO34 com divisor"| UF["HC-SR04 frontal"]
-    ESP -->|"GPIO17 e GPIO35 com divisor"| UT["HC-SR04 traseiro"]
+    ESP -->|"GPIO17 e GPIO35 com divisor"| UF["HC-SR04 frontal"]
+    ESP -->|"GPIO16 e GPIO34 com divisor"| UT["HC-SR04 traseiro"]
     BF["Borda frontal"] -->|"DO no GPIO33"| ESP
     BT["Borda traseira"] -->|"DO no GPIO32"| ESP
 ```
@@ -38,8 +38,8 @@ Ligue os dois fios do motor esquerdo a **AO1/AO2** e os do direito a **BO1/BO2**
 
 | Módulo | Alimentação | Pinos de sinal |
 | --- | --- | --- |
-| HC-SR04 frontal | 5 V e GND comum | TRIG → GPIO16. ECHO → divisor → GPIO34 |
-| HC-SR04 traseiro | 5 V e GND comum | TRIG → GPIO17. ECHO → divisor → GPIO35 |
+| HC-SR04 frontal | 5 V e GND comum | TRIG → GPIO17. ECHO → divisor → GPIO35 |
+| HC-SR04 traseiro | 5 V e GND comum | TRIG → GPIO16. ECHO → divisor → GPIO34 |
 | Infravermelho frontal | 3V3 e GND comum | DO → GPIO33. AO livre |
 | Infravermelho traseiro | 3V3 e GND comum | DO → GPIO32. AO livre |
 

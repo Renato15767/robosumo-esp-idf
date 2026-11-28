@@ -13,6 +13,7 @@ static void apply_motion(motion_t motion)
         case FORWARD: motors_set(DRIVE_DUTY, DRIVE_DUTY); break;
         case REVERSE: motors_set(-DRIVE_DUTY, -DRIVE_DUTY); break;
         case ROTATE: motors_set(-TURN_DUTY, TURN_DUTY); break;
+        case ATTACK: motors_set(ATTACK_DUTY, ATTACK_DUTY); break;
     }
 }
 

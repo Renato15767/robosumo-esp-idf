@@ -8,12 +8,17 @@ static void step(controller_t *c, int64_t now, bool front, bool rear)
     controller_step(c, now, front, rear, &no_sample);
 }
 
-static void sample(controller_t *c, int index, int64_t now)
+static void sample_distance(controller_t *c, int index, int64_t now, float cm)
 {
     sonar_readings_t sonar = {0};
     sonar.at_ms[index] = now;
-    sonar.cm[index] = 25.0f;
+    sonar.cm[index] = cm;
     controller_step(c, now, false, false, &sonar);
+}
+
+static void sample(controller_t *c, int index, int64_t now)
+{
+    sample_distance(c, index, now, 25.0f);
 }
 
 static void test_start_and_front(void)
@@ -28,7 +33,7 @@ static void test_start_and_front(void)
     sample(&c, 0, START_MS + 5);  // A mesma leitura não conta duas vezes.
     assert(c.state == REACQUIRE);
     sample(&c, 0, START_MS + 125);
-    assert(c.state == SEARCH && c.motion == FORWARD);
+    assert(c.state == SEARCH && c.motion == ATTACK);
     step(&c, START_MS + 125 + REACQUIRE_MS + 1, false, false);
     assert(c.state == SCAN_TURN && c.motion == ROTATE);
 }
@@ -50,7 +55,27 @@ static void test_rear_turn(void)
     assert(c.state == REACQUIRE && c.motion == BRAKE);
     sample(&c, 0, turn + HALF_TURN_MS + 5);
     sample(&c, 0, turn + HALF_TURN_MS + 125);
-    assert(c.motion == FORWARD);
+    assert(c.motion == ATTACK);
+}
+
+static void test_intermittent_front_echo(void)
+{
+    controller_t c;
+    controller_init(&c, 0);
+    step(&c, START_MS, false, false);
+    sample(&c, 0, 5055);
+    sample(&c, 1, 5115);
+    sample_distance(&c, 0, 5175, -1.0f);
+    sample(&c, 1, 5235);
+    assert(c.state == REACQUIRE && c.motion == BRAKE);
+    sample(&c, 0, 5295);
+    assert(c.state == SEARCH && c.motion == ATTACK);
+
+    sample_distance(&c, 0, 5415, -1.0f);
+    sample_distance(&c, 0, 5535, -1.0f);
+    assert(c.motion == ATTACK);
+    step(&c, 5295 + FRONT_HOLD_MS, false, false);
+    assert(c.motion != ATTACK);
 }
 
 static void test_edge(bool front)
@@ -60,7 +85,7 @@ static void test_edge(bool front)
     step(&c, 5000, false, false);
     sample(&c, 0, 5005);
     sample(&c, 0, 5125);
-    assert(c.motion == FORWARD);
+    assert(c.motion == ATTACK);
     step(&c, 5130, front, !front);
     assert(c.state == EDGE_BRAKE && c.motion == BRAKE);
     const int64_t escape = 5130 + BRAKE_MS;
@@ -100,6 +125,7 @@ int main(void)
 {
     test_start_and_front();
     test_rear_turn();
+    test_intermittent_front_echo();
     test_edge(true);
     test_edge(false);
     test_halt();

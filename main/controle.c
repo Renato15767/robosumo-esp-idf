@@ -15,7 +15,8 @@ void controller_init(controller_t *c, int64_t now)
 static void reacquire(controller_t *c, int64_t now)
 {
     // Descarta as leituras anteriores à nova posição.
-    c->hits[0] = c->hits[1] = 0;
+    c->front_recent = 0;
+    c->rear_hits = 0;
     c->last_sample[0] = c->last_sample[1] = now;
     enter(c, REACQUIRE, BRAKE, now);
 }
@@ -72,15 +73,20 @@ static void update_targets(controller_t *c, const sonar_readings_t *sonar, int64
         if (measured > c->last_sample[i]) {
             c->last_sample[i] = measured;
             const float cm = sonar->cm[i];
-            if (cm >= 2.0f && cm <= TARGET_CM) {
-                if (c->hits[i] < 2) ++c->hits[i];
+            const bool in_range = cm >= 2.0f && cm <= TARGET_CM;
+            if (i == 0) {
+                c->front_recent = ((c->front_recent << 1) | in_range) & 7;
+                if (in_range) c->last_front_echo = measured;
+            } else if (in_range) {
+                if (c->rear_hits < 2) ++c->rear_hits;
             } else {
-                c->hits[i] = 0;
-                if (i == 1) c->rear_latched = false;
+                c->rear_hits = 0;
+                c->rear_latched = false;
             }
         }
-        if (now - c->last_sample[i] > REACQUIRE_MS) c->hits[i] = 0;
     }
+    if (now - c->last_sample[0] > REACQUIRE_MS) c->front_recent = 0;
+    if (now - c->last_sample[1] > REACQUIRE_MS) c->rear_hits = 0;
 }
 
 void controller_step(controller_t *c, int64_t now, bool front_white, bool rear_white,
@@ -110,11 +116,17 @@ void controller_step(controller_t *c, int64_t now, bool front_white, bool rear_w
     }
 
     update_targets(c, sonar, now);
-    const bool ahead = c->hits[0] >= 2;
-    const bool behind = c->hits[1] >= 2 && !c->rear_latched;
-    if (c->state == REACQUIRE && !ahead && !behind && elapsed < REACQUIRE_MS) return;
+    const bool front_latest_valid = c->front_recent & 1;
+    const bool front_confirmed = front_latest_valid && (c->front_recent & (c->front_recent - 1));
+    // Se já perseguia, um eco perdido não obriga a abandonar o alvo imediatamente.
+    const bool following = c->state == SEARCH && c->motion == ATTACK &&
+        now - c->last_front_echo < FRONT_HOLD_MS;
+    const bool ahead = front_confirmed || following;
+    const bool behind = c->rear_hits >= 2 && !c->rear_latched;
+    if (c->state == REACQUIRE && !ahead && (c->front_recent != 0 || !behind) &&
+        elapsed < REACQUIRE_MS) return;
     if (ahead) {
-        enter(c, SEARCH, FORWARD, now);
+        enter(c, SEARCH, ATTACK, now);
     } else if (behind) {
         c->rear_latched = true;
         enter(c, REAR_BRAKE, BRAKE, now);

@@ -7,9 +7,9 @@ Firmware em C para ESP32 clássico, ponte H TB6612FNG, dois ultrassons HC-SR04 e
 ## Como funciona
 
 1. A ponte H fica em espera durante os primeiros 5 segundos. O robô começa a busca com os dois sensores de borda sobre o preto.
-2. Os ultrassons medem alternadamente. Duas leituras consecutivas entre 2 e 60 cm confirmam um alvo. Quando o sensor frontal confirma, o robô avança.
+2. Os ultrassons medem alternadamente, com alcance configurado entre 2 e 60 cm. O frontal confirma com dois acertos nas últimas três leituras, incluindo a mais recente. Durante o ataque, os dois motores recebem PWM de 100% e o robô tolera até 260 ms sem um eco válido antes de voltar a procurar. O traseiro exige duas leituras consecutivas.
 3. Quando só o sonar traseiro confirma, o robô freia, executa uma meia-volta e mede novamente. Sem alvo, procura em giros curtos com pausas para medir.
-4. A faixa branca tem prioridade. O robô freia e recua se a faixa está à frente, ou avança se ela está atrás. De volta ao preto, percorre uma margem curta, freia, gira e retoma a busca.
+4. A faixa branca tem prioridade. O robô freia e recua se a faixa está à frente, ou avança se ela está atrás. De volta ao preto, percorre uma margem curta, freia, gira e retoma a busca. A saída da borda e os giros usam PWM de aproximadamente 50%.
 5. Branco nos dois sensores, branco no caminho da fuga ou fuga sem sucesso fazem o robô parar até reiniciar.
 
 O tempo de giro inicial é de 480 ms. Ajuste `HALF_TURN_MS` em [main/controle.h](main/controle.h) com a alimentação e a superfície da arena. O ajuste depende da tração e da velocidade das rodas. O firmware foi compilado para ESP32 e a lógica foi testada em computador. A meia-volta, a detecção da faixa e a capacidade de empurrar a garrafa exigem teste físico.

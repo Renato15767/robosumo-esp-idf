@@ -11,11 +11,12 @@
 #define SCAN_STEP_MS 50
 #define SONAR_GAP_MS 60
 #define ECHO_TIMEOUT_MS 5
-// Tempo para cada sonar devolver duas amostras novas após a parada.
-#define REACQUIRE_MS (4 * SONAR_GAP_MS + ECHO_TIMEOUT_MS + 20)
+// Tempo para o sonar frontal devolver até três amostras após a parada.
+#define REACQUIRE_MS (5 * SONAR_GAP_MS + ECHO_TIMEOUT_MS + 20)
+#define FRONT_HOLD_MS 260
 #define TARGET_CM 60.0f
 
-typedef enum { STANDBY, BRAKE, FORWARD, REVERSE, ROTATE } motion_t;
+typedef enum { STANDBY, BRAKE, FORWARD, REVERSE, ROTATE, ATTACK } motion_t;
 typedef enum {
     WAITING, SEARCH, SCAN_TURN, REACQUIRE, REAR_BRAKE, REAR_TURN,
     EDGE_BRAKE, ESCAPE, TURN_BRAKE, EDGE_TURN, HALT,
@@ -33,7 +34,9 @@ typedef struct {
     int64_t state_since;
     int64_t clear_since;
     int64_t last_sample[2];
-    unsigned hits[2];
+    uint8_t front_recent;  // Três leituras, com a mais recente no bit 0.
+    unsigned rear_hits;
+    int64_t last_front_echo;
     bool rear_latched;
 } controller_t;
 
